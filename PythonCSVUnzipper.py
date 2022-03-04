@@ -9,43 +9,38 @@ import tkinter as tk
 from tkinter import filedialog
 import shutil
 import os
-import io
 
 root = tk.Tk()
 root.withdraw()
 
 file_path = filedialog.askopenfilename()
-file_path_name = file_path.rsplit('/',1)[1]
-file_name = file_path_name.rsplit('.',1)[0]
-file_path_directory = file_path.rsplit('/',1)[0]
-CSV_directory = file_path_directory + "/" + "CSVs"
+unzip_path = os.path.dirname(file_path) + "/" + os.path.basename(file_path).rsplit('.',1)[0]
+csv_path = os.path.dirname(file_path) + "/" + "CSV"
 
-
-def unzip(f):
+def unzip(f,l):
     with ZipFile(f, 'r') as zipObj:
-        if os.path.isdir(CSV_directory) == False:
-            os.mkdir(CSV_directory)
-        listOfFileNames = zipObj.namelist()
-        for member in listOfFileNames:
-            filename = os.path.basename(member)
-            if not filename:
-                continue
-            if member.endswith('.csv'):
-                source = zipObj.open(member)
-                target = open(os.path.join(CSV_directory, file_name + "_" + filename), "wb")
+        for i in zipObj.namelist():
+            filename = os.path.basename(i)
+            if i.endswith('.zip'):
+                zipObj.extract(i,l)
+            if i.endswith('.csv'):
+                source = zipObj.open(i)
+                target = open(os.path.join(csv_path, i + "_" + filename).replace("\\","/"), "wb")
                 with source, target:
                     shutil.copyfileobj(source, target)
-            if member.endswith('.zip'):
-                content = io.BytesIO(zipObj.read(member))
-                with ZipFile(content, 'r') as zipObj1:
-                    for i in zipObj1.namelist():
-                        filename1 = os.path.basename(member)
-                        if not filename1:
-                            continue
-                        if i.endswith('.csv'):
-                            source = zipObj1.open(i)
-                            target = open(os.path.join(CSV_directory, file_name + "_" + filename1), "wb")
-                            with source, target:
-                                shutil.copyfileobj(source, target)
+    for x in os.listdir(unzip_path):
+        with ZipFile(os.path.join(unzip_path, x).replace("\\","/"), 'r') as newZipObj:
+            for y in newZipObj.namelist():
+                filename1 = os.path.basename(y)
+                if not filename:
+                    continue
+            if y.endswith('.csv'):
+                if os.path.isdir(csv_path) == False:
+                    os.mkdir(csv_path)
+                source = newZipObj.open(y)
+                target = open(os.path.join(csv_path, x + "_" + filename1).replace("\\","/"), "wb")
+                with source, target:
+                    shutil.copyfileobj(source, target)
 
-unzip(file_path)
+unzip(file_path, unzip_path)
+shutil.rmtree(unzip_path)
